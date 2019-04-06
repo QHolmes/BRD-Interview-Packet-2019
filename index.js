@@ -7,6 +7,12 @@ app.use(express.json())
 var sqlite3 = require('sqlite3').verbose()
 var db = new sqlite3.Database(':memory:')
 
+//Setup CSV, using npm install csv-parser
+const csv = require('csv-parser')
+const fs = require('fs')
+
+
+
 // list of people, gender, age, name, email, address
 db.serialize(function () {
     // Add additional DB setup inside this function
@@ -27,6 +33,7 @@ db.serialize(function () {
     })
 
     db.run('CREATE TABLE people_data (first_name TEXT, last_name TEXT, gender TEXT, age INT)')
+    loadCSV();
 })
 
 //aggregates gender data
@@ -98,5 +105,57 @@ app.get('/scores', (req, res) => {
 app.use(express.static('frontend/dist/'))
 
 app.listen(port, () => console.log(`Example app listening on port ${port}!`))
+
+function loadCSV(){
+    console.log("Reading in data.csv")
+    var results = [];
+    fs.createReadStream('data.csv')
+        .pipe(csv())
+        .on('data', (data) => results.push(data))
+        .on('end', () => {
+            addData(results)
+        });
+
+
+
+
+}
+
+function addData(results){
+    //Time to create the database
+    //db.run('CREATE TABLE people_data (first_name TEXT, last_name TEXT, gender TEXT, age INT)')
+
+    console.log("Adding data.csv to people_data")
+
+    //Prepare statment
+    var stmt = db.prepare('INSERT INTO people_data VALUES (?, ?, ?, ?)', x => {
+        //If there is an error, print to consol
+        if(x != null)
+            console.log(x)
+    })
+
+    //Add each row from CSV
+    results.forEach(x => {
+        stmt.run(x["name.first"], x["name.last"], x["gender"], x["dob.age"])
+    });
+
+    //finalize statement to send
+    stmt.finalize(x => {
+        console.log("Completed adding data.csv to people_data")
+        console.log("Printing out people_data table")
+
+        //Print out each row so we know it's there
+        db.each('SELECT *' +
+            'FROM people_data'
+            , function (err, row) {
+                if(err == null)
+                    console.log(row)
+                else
+                    console.log(err)
+            }, (error, num) => {
+                console.log(num + " rows read -- " + results.length + " expected")
+            })
+    })
+}
 
 // db.close()
