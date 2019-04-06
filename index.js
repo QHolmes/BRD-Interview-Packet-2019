@@ -102,6 +102,94 @@ app.get('/scores', (req, res) => {
     })
 });
 
+//aggregates gender data
+app.get('/countAge', (req, res) => {
+    let count = req.query.count;
+    //If count was requested, take input, else default to 6
+    if(count == null || isNaN(count))
+        count = 6;
+
+    var ageRange;
+    var maxAge;
+    db.get('SELECT MAX(age) AS max' +
+        ' FROM people_data', (err, rows) => {
+        var groups = [count];
+        if(err != null){
+            colsole.log("DB ERROR ", err);
+            res.send('[]');
+        }else{
+            maxAge = rows["max"];
+            ageRange = Math.ceil((maxAge + 1) / count);
+            var request = "";
+
+            if (count > 1) {
+                request += "SELECT t.age, COUNT(*) AS amount";
+                request += " FROM( Select case ";
+
+                var starting = 0;
+                var ending = ageRange - 1;
+                for (let x = 0; x < count - 1; x++) {
+                    request += " WHEN age between "
+                        + starting + " and "
+                        + ending + " then '"
+                        + starting + "-"
+                        + ending + "'";
+                    groups[x] = {age: starting + "-" + ending, amount: 0};
+                    starting += ageRange;
+                    ending += ageRange;
+                }
+
+                request += " ELSE '" + starting + "-" + ending + "' END AS age";
+                request += " FROM people_data) t"
+                request += " GROUP BY t.age"
+                groups[count - 1] = {age: starting + "-" + ending, amount: 0};
+            } else {
+                request += "SELECT age, COUNT(*) AS amount " +
+                    " FROM people_data";
+            }
+
+            db.all(request, (err, rows) => {
+                if (err) {
+                    console.log('DB Error ', err);
+                    res.send('[]')
+                } else {
+                    //format to chart.js input
+                    const labels = [];
+                    const dataset = {
+                        data: [],
+                        backgroundColor: []
+                    };
+
+                    if(count > 1) {
+                        var amount;
+                        groups.forEach(gr => {
+                            amount = rows.find(x => x["age"] === gr["age"])
+                            if (amount)
+                                gr["amount"] = amount["amount"];
+                            labels.push(gr["age"]);
+                            dataset.data.push(gr["amount"]);
+                            dataset.backgroundColor.push('#26c6da');
+                        })
+                    }else{
+                        labels.push("0-" + maxAge);
+                        dataset.data.push(rows[0]["amount"]);
+                    }
+
+
+                    const result = {
+                        labels: labels,
+                        datasets: [dataset]
+                    };
+                    res.json(result);
+                }
+            })
+        }
+    });
+
+
+
+});
+
 app.use(express.static('frontend/dist/'))
 
 app.listen(port, () => console.log(`Example app listening on port ${port}!`))
@@ -142,20 +230,75 @@ function addData(results){
     //finalize statement to send
     stmt.finalize(x => {
         console.log("Completed adding data.csv to people_data")
-        console.log("Printing out people_data table")
 
         //Print out each row so we know it's there
+        var count = 6;
         db.each('SELECT *' +
             'FROM people_data'
             , function (err, row) {
-                if(err == null)
-                    console.log(row)
-                else
-                    console.log(err)
+                if(err != null)
+                    console.log(err);
             }, (error, num) => {
                 console.log(num + " rows read -- " + results.length + " expected")
-            })
+
+            });
+
+        var ageRange;
+        var maxAge;
+        var groups = [];
+        db.get('SELECT MAX(age) AS max' +
+            ' FROM people_data', (err, rows) => {
+            if(err != null){
+                colsole.log("DB ERROR ", err);
+                res.send('[]');
+            }else {
+                maxAge = rows["max"];
+                ageRange = Math.ceil((maxAge + 1) / count);
+                var request = "";
+
+                if (count > 1) {
+                    request += "SELECT t.age, COUNT(*) AS amount";
+                    request += " FROM( Select case ";
+
+                    var starting = 0;
+                    var ending = ageRange - 1;
+                    for (let x = 0; x < count - 1; x++) {
+                        request += " WHEN age between "
+                            + starting + " and "
+                            + ending + " then '"
+                            + starting + "-"
+                            + ending + "'";
+                        groups[x] = {age: starting + "-" + ending, amount: 0};
+                        starting += ageRange;
+                        ending += ageRange;
+                    }
+
+                    request += " ELSE '" + starting + "-" + ending + "' END AS age";
+                    request += " FROM people_data) t"
+                    request += " GROUP BY t.age"
+                    groups[count - 1] = {age: starting + "-" + ending, amount: 0};
+                } else {
+                    request += "SELECT age, COUNT(*) AS amount " +
+                        " FROM people_data";
+                }
+
+
+                var amount = null;
+                db.all(request, (err, rows) => {
+
+                    groups.forEach(gr => {
+                        amount = rows.find(x => x["age"] === gr["age"])
+                        if(amount)
+                            gr["amount"] = amount["amount"];
+                    })
+
+                });
+            }
+        });
+
+
+
+
     })
 }
-
 // db.close()
