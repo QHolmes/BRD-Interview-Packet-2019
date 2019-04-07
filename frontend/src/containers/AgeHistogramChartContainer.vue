@@ -34,7 +34,7 @@
         mounted() {
             let scope = this;
             this.loaded = false;
-            fetch('http://localhost:3000/countAge?count=20').then(res => {
+            fetch('http://localhost:3000/countAge').then(res => {
                 return res.json()
             }).then(data => {
                 scope.loaded = true;

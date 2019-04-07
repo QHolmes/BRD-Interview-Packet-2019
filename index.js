@@ -10,6 +10,7 @@ var db = new sqlite3.Database(':memory:')
 //Setup CSV, using npm install csv-parser
 const csv = require('csv-parser')
 const fs = require('fs')
+let peopleDataHeaders = ["first_name", "last_name", "gender", "age"];
 
 
 
@@ -34,6 +35,7 @@ db.serialize(function () {
 
     db.run('CREATE TABLE people_data (first_name TEXT, last_name TEXT, gender TEXT, age INT)')
     loadCSV();
+    sortParse();
 })
 
 //aggregates gender data
@@ -67,7 +69,8 @@ app.get('/countGender', (req, res) => {
 //inserts a row into the people_data table
 app.post('/addPerson', (req, res) => {
     console.log(req.body)
-    db.run("INSERT INTO people_data ('first_name', 'last_name', 'gender', 'age') VALUES (?, ?, ?, ?)", [req.body.firstName, req.body.lastName, req.body.gender, req.body.age], function (err, row) {
+    db.run("INSERT INTO people_data ('first_name', 'last_name', 'gender', 'age') VALUES (?, ?, ?, ?)",
+        [req.body.firstName.toLowerCase(), req.body.lastName.toLowerCase(), req.body.gender.toLowerCase(), req.body.age], function (err, row) {
             if (err) {
                 res.json(false)
             } else {
@@ -78,7 +81,49 @@ app.post('/addPerson', (req, res) => {
 })
 
 app.get('/getPeople', (req, res) => {
-    db.all('SELECT * FROM people_data', function (err, rows) {
+    let search = req.query["search"];
+    let sort = req.query["sort"]; //Should be in the format of "first_name:asc,last_name:dec"
+
+    let where = "";
+    let orderBy = " ORDER BY last_name ASC, first_name ASC";
+
+
+    //Ready the where clause, if needed
+    if(search){
+        //Only allow numbers, letters, and whitespace
+        where = " WHERE '" + search.replace(/[^a-z0-9 ]/gi,'') + "' IN (";
+
+        //Build the WHERE clause
+        for(let i = 0; i < peopleDataHeaders.length - 1; i++) {
+            where += peopleDataHeaders[i] + ", ";
+        }
+        where += peopleDataHeaders[peopleDataHeaders.length - 1] + ") ";
+    }
+
+    //Change the ORDER BY if needed
+    let orderParam;
+    if(sort) {
+        orderParam = {};
+        let parts = sort.split(",");
+        for(let i = 0; i < parts.length; i++){
+            let item = parts[i].split(":");
+            if (peopleDataHeaders.find(x => x === item[0]))
+                if(item[1].toLowerCase() === 'asc' || item[1].toLowerCase() === 'desc')
+                    orderParam[i] = {col: item[0], sort: item[1]};
+        }
+
+        orderBy = " ORDER BY"
+        for(let i = 0; i < Object.keys(orderParam).length - 1; i++){
+            orderBy += " " + orderParam[i]["col"] + " " + orderParam[i]["sort"] + ", ";
+        }
+
+        orderBy += orderParam[Object.keys(orderParam).length  - 1]["col"] + " "
+            + orderParam[Object.keys(orderParam).length - 1]["sort"] + " ";
+    }
+
+    //send the request and return
+    let query = 'SELECT * FROM people_data ' + where + orderBy;
+    db.all(query, function (err, rows) {
         if (err) {
             console.log('DB Error ', err)
             res.json([]);
@@ -157,6 +202,7 @@ app.get('/countAge', (req, res) => {
                     const labels = [];
                     const dataset = {
                         data: [],
+                        label: 'Number of People in Age Group',
                         backgroundColor: []
                     };
 
@@ -200,12 +246,12 @@ function loadCSV(){
     fs.createReadStream('data.csv')
         .pipe(csv())
         .on('data', (data) => results.push(data))
+        .on('headers', (headers => {
+
+        }))
         .on('end', () => {
             addData(results)
         });
-
-
-
 
 }
 
@@ -296,9 +342,23 @@ function addData(results){
             }
         });
 
-
-
-
     })
+}
+
+function sortParse(){
+    let sort = "first_name:asc, last_name:hello, yellow:ASC"
+    let orderParm;
+    if(sort) {
+        orderParm = {};
+
+        let parts = sort.split(",");
+        for(let i = 0; i < parts.length; i++){
+            let item = parts[i].split(":");
+            if (peopleDataHeaders.find(x => x === item[0]))
+                if(item[1].toLowerCase() === 'asc' || item[1].toLowerCase() === 'desc')
+                    orderParm[i] = {col: item[0], sort: item[1]};
+        }
+    }
+    console.log(orderParm)
 }
 // db.close()

@@ -26,6 +26,8 @@ import PersonForm from '../components/PersonForm'
 
                    })
 
+               }else{
+                   console.log(person);
                }
            }
         }
