@@ -1,6 +1,15 @@
+
 <script>
     import { Bar } from 'vue-chartjs'
     export default {
+        name: 'PersonForm',
+        data: function () {
+            return {
+                bins: {
+                    total: 0
+                }
+            }
+        },
         extends: Bar,
         props: {
             chartData: {
@@ -14,6 +23,11 @@
         },
         mounted () {
             this.renderChart(this.chartData, this.options)
+        },
+        methods: {
+            submitForm: function() {
+                this.$emit('submit-person-form', this.personData);
+            }
         },
         name: 'HistogramChart'
     }

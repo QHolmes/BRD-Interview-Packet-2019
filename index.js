@@ -91,13 +91,22 @@ app.get('/getPeople', (req, res) => {
     //Ready the where clause, if needed
     if(search){
         //Only allow numbers, letters, and whitespace
-        where = " WHERE '" + search.replace(/[^a-z0-9 ]/gi,'') + "' IN (";
+        let searchParts = search.replace(/[^a-z0-9 ]/gi,'').toLowerCase().split(" ");
+        where = " WHERE ";
 
-        //Build the WHERE clause
-        for(let i = 0; i < peopleDataHeaders.length - 1; i++) {
-            where += peopleDataHeaders[i] + ", ";
+        for(let j = 0; j < searchParts.length - 1; j++){
+            where += " (";
+            for(let i = 0; i < peopleDataHeaders.length - 1; i++) {
+                where += " " + peopleDataHeaders[i] + " LIKE '%" + searchParts[j] +"%' OR ";
+            }
+            where += " " + peopleDataHeaders[peopleDataHeaders.length - 1] + " LIKE '%" + searchParts[j] +"%') AND";
         }
-        where += peopleDataHeaders[peopleDataHeaders.length - 1] + ") ";
+
+        where += " (";
+        for(let i = 0; i < peopleDataHeaders.length; i++) {
+            where += " " + peopleDataHeaders[i] + " LIKE '%" + searchParts[searchParts.length - 1] +"%' OR ";
+        }
+        where += " " + peopleDataHeaders[peopleDataHeaders.length - 1] + " LIKE '%" + searchParts[searchParts.length - 1] +"%') ";
     }
 
     //Change the ORDER BY if needed
@@ -151,7 +160,7 @@ app.get('/scores', (req, res) => {
 app.get('/countAge', (req, res) => {
     let count = req.query.count;
     //If count was requested, take input, else default to 6
-    if(count == null || isNaN(count))
+    if(count == null || count < 1 || isNaN(count))
         count = 6;
 
     var ageRange;
@@ -219,6 +228,7 @@ app.get('/countAge', (req, res) => {
                     }else{
                         labels.push("0-" + maxAge);
                         dataset.data.push(rows[0]["amount"]);
+                        dataset.backgroundColor.push('#26c6da');
                     }
 
 

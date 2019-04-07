@@ -6,6 +6,12 @@
 
     export default {
         name: 'PeopleTableContainer',
+        created: function () {
+            this.$bus.$on('search-table', this.searchTable)
+        },
+        beforeDestroy: function () {
+            this.$bus.$off('search-table', this.searchTable)
+        },
         components: {
            Table
         },
@@ -22,6 +28,17 @@
 
                 let scope = this;
                 fetch('http://localhost:3000/getPeople').then(res => {
+                    return res.json()
+                }).then(data => {
+                    scope.rows = data;
+                }).catch(err => {
+                    console.log(err);
+                });
+            },
+
+            searchTable: function(str){
+                let scope = this;
+                fetch('http://localhost:3000/getPeople?search="' + str + '"').then(res => {
                     return res.json()
                 }).then(data => {
                     scope.rows = data;

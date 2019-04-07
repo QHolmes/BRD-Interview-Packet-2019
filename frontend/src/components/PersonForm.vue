@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div class="formDiv">
         <h3>Add New Person</h3>
         <table>
             <tr>
@@ -23,7 +23,7 @@
             </tr>
             <tr>
                 <th></th>
-                <th><button v-on:click="submitForm">Submit</button></th>
+                <th><button v-on:click="submitForm">Add Person</button></th>
             </tr>
         </table>
 
@@ -52,12 +52,9 @@
 </script>
 <style scoped>
     table {
-        border: 1px solid #090909;
-        border-bottom: 1px solid #ddd;
         border-collapse: collapse;
-        width: 80%;
         text-transform: capitalize;
-        margin: 10%;
+        margin: 0 auto;
     }
 
     th {
@@ -65,15 +62,13 @@
         padding-bottom: 8px;
         padding-left: 8px;
         text-align: left;
-        background-color: #42b983;
         color: white;
     }
 
-    tr:nth-child(even){
-        background-color: #f2f2f2;
-    }
-    tr:hover {
-        background-color: #ddd;
+    .formDiv {
+        padding-top: 1px;
+        background-color: #42b983;
+        color: white;
     }
 
 </style>

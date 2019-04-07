@@ -3,6 +3,13 @@
         <h3>Table</h3>
         <br>
         <button v-on:click="clickedRefresh">Refresh Table</button>
+        <table>
+            <tr>
+                <th>Search Table</th>
+                <th><input type="text" v-model="searchBox" v-on:keyup.enter="searchTable"/></th>
+                <th><button v-on:click="searchTable">Enter</button></th>
+            </tr>
+        </table>
         <table class="peopleTable">
             <thead>
                 <tr>
@@ -32,25 +39,31 @@
                 default: null
             },
         },
-        data: function () {
-            return {}
+        data() {
+            return {
+                searchBox: " "
+            }
         },
         methods: {
             clickedRefresh() {
                 this.$emit('refresh-table');
+            },
+            searchTable() {
+                this.$bus.$emit('search-table', this.searchBox);
+
             }
         },
         name: 'Table',
     }
 </script>
 <style scoped>
-    .peopleTable {
+    table {
         border: 1px solid #090909;
         border-bottom: 1px solid #ddd;
         border-collapse: collapse;
-        width: 80%;
+        width: 100%;
         text-transform: capitalize;
-        margin: 10px;
+        margin: 10px 0%;
     }
 
     th {
