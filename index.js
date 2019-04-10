@@ -126,7 +126,7 @@ app.get('/getPeople', (req, res) => {
             orderBy += " " + orderParam[i]["col"] + " " + orderParam[i]["sort"] + ", ";
         }
 
-        orderBy += orderParam[Object.keys(orderParam).length  - 1]["col"] + " "
+        orderBy += " " + orderParam[Object.keys(orderParam).length  - 1]["col"] + " "
             + orderParam[Object.keys(orderParam).length - 1]["sort"] + " ";
     }
 

@@ -13,10 +13,10 @@
         <table class="peopleTable">
             <thead>
                 <tr>
-                    <th> Last Name </th>
-                    <th> First Name </th>
-                    <th> Gender </th>
-                    <th> Age </th>
+                    <th v-on:click="lastColToggle">Last Name</th>
+                    <th v-on:click="firstCol">First Name</th>
+                    <th v-on:click="genderCol">Gender</th>
+                    <th v-on:click="ageCol">Age</th>
                 </tr>
             </thead>
             <tbody>
@@ -37,11 +37,11 @@
             rows: {
                 type: Array,
                 default: null
-            },
+            }
         },
         data() {
             return {
-                searchBox: " "
+                searchBox: " ",
             }
         },
         methods: {
@@ -50,7 +50,18 @@
             },
             searchTable() {
                 this.$bus.$emit('search-table', this.searchBox);
-
+            },
+			lastColToggle() {
+                this.$bus.$emit('last-col-toggle', this.searchBox);
+            },
+			firstCol() {
+                this.$bus.$emit('first-col-toggle', this.searchBox);
+            },
+			genderCol() {
+                this.$bus.$emit('gender-col-toggle', this.searchBox);
+            },
+			ageCol() {
+                this.$bus.$emit('age-col-toggle', this.searchBox);
             }
         },
         name: 'Table',
